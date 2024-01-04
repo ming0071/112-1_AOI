@@ -1,0 +1,100 @@
+{
+  "workbench.colorTheme": "Default Dark+",
+  "code-runner.runInTerminal": true,
+  "explorer.confirmDelete": false, //改字體大小
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "files.autoGuessEncoding": true, //自動判斷開啟檔案的語言
+  //以下自行新增
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "overrideName": true,
+      "args": ["-NoExit", "/c", "chcp 65001"],
+      "icon": "terminal-powershell",
+      "env": {
+        "TEST_VAR": "value"
+      }
+    }
+  },
+  "explorer.confirmDragAndDrop": false,
+  "git.enabled": false,
+  // "editor.defaultFormatter": null,
+  // "editor.formatOnSave": false,  // enable per language
+  
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[python]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "code-runner.executorMap": {
+    
+
+    "javascript": "node",
+    "java": "cd $dir && javac $fileName && java $fileNameWithoutExt",
+    "c": "cd $dir && gcc $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "zig": "zig run",
+    // "cpp": "cd $dir && g++ $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "cpp": "cd $dir && g++ $fileName -o $fileNameWithoutExt -std=gnu++14 -I C:\\mingw64\\include -llibopencv_core480 -llibopencv_imgcodecs480 -llibopencv_imgproc480 -llibopencv_calib3d480 -llibopencv_dnn480 -llibopencv_features2d480 -llibopencv_flann480 -llibopencv_gapi480 -llibopencv_highgui480 -llibopencv_ml480 -llibopencv_objdetect480 -llibopencv_photo480 -llibopencv_stitching480 -llibopencv_video480 -llibopencv_videoio480 && $dir$fileNameWithoutExt",
+    "objective-c": "cd $dir && gcc -framework Cocoa $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "php": "php",
+    "python": "python -u",
+    "perl": "perl",
+    "perl6": "perl6",
+    "ruby": "ruby",
+    "go": "go run",
+    "lua": "lua",
+    "groovy": "groovy",
+    "powershell": "powershell -ExecutionPolicy ByPass -File",
+    "bat": "cmd /c",
+    "shellscript": "bash",
+    "fsharp": "fsi",
+    "csharp": "scriptcs",
+    "vbscript": "cscript //Nologo",
+    "typescript": "ts-node",
+    "coffeescript": "coffee",
+    "scala": "scala",
+    "swift": "swift",
+    "julia": "julia",
+    "crystal": "crystal",
+    "ocaml": "ocaml",
+    "r": "Rscript",
+    "applescript": "osascript",
+    "clojure": "lein exec",
+    "haxe": "haxe --cwd $dirWithoutTrailingSlash --run $fileNameWithoutExt",
+    "rust": "cd $dir && rustc $fileName && $dir$fileNameWithoutExt",
+    "racket": "racket",
+    "scheme": "csi -script",
+    "ahk": "autohotkey",
+    "autoit": "autoit3",
+    "dart": "dart",
+    "pascal": "cd $dir && fpc $fileName && $dir$fileNameWithoutExt",
+    "d": "cd $dir && dmd $fileName && $dir$fileNameWithoutExt",
+    "haskell": "runghc",
+    "nim": "nim compile --verbosity:0 --hints:off --run",
+    "lisp": "sbcl --script",
+    "kit": "kitc --run",
+    "v": "v run",
+    "sass": "sass --style expanded",
+    "scss": "scss --style expanded",
+    "less": "cd $dir && lessc $fileName $fileNameWithoutExt.css",
+    "FortranFreeForm": "cd $dir && gfortran $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "fortran-modern": "cd $dir && gfortran $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "fortran_fixed-form": "cd $dir && gfortran $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "fortran": "cd $dir && gfortran $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
+    "sml": "cd $dir && sml $fileName",
+    "mojo": "mojo run"
+  },
+  "code-runner.languageIdToFileExtensionMap": {
+    "bat": ".bat",
+    "powershell": ".ps1",
+    "typescript": ".ts"
+  },
+  "editor.fontSize": 18,
+  "editor.codeActionsOnSave": {
+
+  },
+}
