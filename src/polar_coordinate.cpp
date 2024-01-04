@@ -37,7 +37,7 @@ int main(int argc, char **argv)
     // ---                        HoughCircles                               ---
     // -------------------------------------------------------------------------
     // pre-process
-    src = imread(".\\image\\430.bmp");
+    src = imread("..\\data\\image\\430.bmp");
     calibration(src);
     cvtColor(dst, dst, COLOR_BGR2GRAY);
     medianBlur(dst, dst, 3);
@@ -186,7 +186,7 @@ void onMouse(int event, int x, int y, int flags, void *userdata)
 // -------------------------------------------------------------------------
 void calibration(const Mat &input)
 {
-    FileStorage fs(".\\calibration.xml", FileStorage::READ);
+    FileStorage fs("..\\data\\calibration.xml", FileStorage::READ);
 
     Mat cameraMatrix, distCoeffs;
     fs["cameraMatrix"] >> cameraMatrix;

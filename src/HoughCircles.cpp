@@ -27,7 +27,7 @@ void drawCircle(Mat &input, const vector<Vec3f> &circles);
 int main(int argc, char **argv)
 {
     // pre-process
-    src = imread(".\\image\\345.bmp");
+    src = imread("..\\data\\image\\345.bmp");
     // -------------------------------------------------------------------------
     // -------------                 threshold                  ----------------
     // -------------------------------------------------------------------------
@@ -114,7 +114,7 @@ void thresholdCall(int, void *)
 //-- VOID
 void calibration(const Mat &input)
 {
-    FileStorage fs(".\\calibration.xml", FileStorage::READ);
+    FileStorage fs("..\\data\\calibration.xml", FileStorage::READ);
 
     Mat cameraMatrix, distCoeffs;
     fs["cameraMatrix"] >> cameraMatrix;

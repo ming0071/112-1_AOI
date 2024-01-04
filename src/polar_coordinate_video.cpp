@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     // ---                        HoughCircles                               ---
     // -------------------------------------------------------------------------
     // pre-process
-    VideoCapture capture(".\\image\\camera.avi");
+    VideoCapture capture("..\\data\\image\\camera.avi");
     if (!capture.isOpened())
     {
         cout << "Cannot open the video." << endl;
@@ -200,7 +200,7 @@ void onMouse(int event, int x, int y, int flags, void *userdata)
 // -------------------------------------------------------------------------
 void calibration(const Mat &input)
 {
-    FileStorage fs(".\\calibration.xml", FileStorage::READ);
+    FileStorage fs("..\\data\\calibration.xml", FileStorage::READ);
 
     Mat cameraMatrix, distCoeffs;
     fs["cameraMatrix"] >> cameraMatrix;
