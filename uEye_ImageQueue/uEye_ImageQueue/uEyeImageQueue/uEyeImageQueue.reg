@@ -1,0 +1,17 @@
+REGEDIT
+; This .REG file may be used by your SETUP program.
+;   If a SETUP program is not available, the entries below will be
+;   registered in your InitInstance automatically with a call to
+;   CWinApp::RegisterShellFileTypes and COleObjectFactory::UpdateRegistryAll.
+
+
+HKEY_CLASSES_ROOT\uEyeImageQueue.Application = uEyeImageQueue Application
+
+
+HKEY_CLASSES_ROOT\uEyeImageQueue.Application\CLSID = {F935774A-DA78-4A3B-8EAF-ABFDF44ED676}
+
+HKEY_CLASSES_ROOT\CLSID\{F935774A-DA78-4A3B-8EAF-ABFDF44ED676} = uEyeImageQueue Application
+HKEY_CLASSES_ROOT\CLSID\{F935774A-DA78-4A3B-8EAF-ABFDF44ED676}\ProgId = uEyeImageQueue.Application
+
+
+HKEY_CLASSES_ROOT\CLSID\{F935774A-DA78-4A3B-8EAF-ABFDF44ED676}\LocalServer32 = uEyeImageQueue.EXE

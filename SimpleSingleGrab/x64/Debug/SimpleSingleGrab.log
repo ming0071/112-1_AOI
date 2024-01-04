@@ -1,0 +1,14 @@
+﻿SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_FreezeVideomain 中參考了無法解析的外部符號
+SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_AllocImageMemmain 中參考了無法解析的外部符號
+SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_SetImageMemmain 中參考了無法解析的外部符號
+SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_FreeImageMemmain 中參考了無法解析的外部符號
+SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_SetColorModemain 中參考了無法解析的外部符號
+SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_RenderBitmapmain 中參考了無法解析的外部符號
+SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_SetDisplayModemain 中參考了無法解析的外部符號
+SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_InitCameramain 中參考了無法解析的外部符號
+SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_ExitCameramain 中參考了無法解析的外部符號
+SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_GetSensorInfomain 中參考了無法解析的外部符號
+SimpleSingleGrab.obj : error LNK2019: 在函式 __imp_is_ImageFilemain 中參考了無法解析的外部符號
+C:\Program Files\IDS\uEye\Develop\lib\ueye_api.lib : warning LNK4272: 程式庫電腦類型 'x86' 與目標電腦類型 'x64' 發生衝突
+C:\Program Files\IDS\uEye\Develop\lib\ueye_tools.lib : warning LNK4272: 程式庫電腦類型 'x86' 與目標電腦類型 'x64' 發生衝突
+C:\Users\willy\Desktop\SimpleSingleGrab\x64\Debug\SimpleSingleGrab.exe : fatal error LNK1120: 11 個無法解析的外部符號
