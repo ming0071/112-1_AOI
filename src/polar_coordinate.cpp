@@ -161,6 +161,18 @@ void calibration(const Mat &input)
     fs.release();
 }
 
+// Custom comparator for sorting circles
+bool compareCircles(const Vec3f &circle1, const Vec3f &circle2)
+{
+    // Sort by y-coordinate first (top to bottom)
+    if (fabs(circle1[1] - circle2[1]) > 20)
+    {
+        return circle1[1] < circle2[1];
+    }
+    // If y-coordinates are the same, sort by x-coordinate (left to right)
+    return circle1[0] < circle2[0];
+}
+
 void calcCircles(const Mat &input, vector<Vec3f> &circles)
 {
     Mat temp, contours;
@@ -172,6 +184,7 @@ void calcCircles(const Mat &input, vector<Vec3f> &circles)
     morphologyEx(input, temp, MORPH_OPEN, kernel);
     Canny(temp, contours, 50, 150);
     HoughCircles(contours, circles, HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, Radmaxius);
+    sort(circles.begin(), circles.end(), compareCircles);
 }
 
 void drawCircle(Mat &input, const vector<Vec3f> &circles)
@@ -192,6 +205,7 @@ void detectCirclesAndDraw()
     putText(output, "Adjust trackbar to control Hough parameters,", Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
     putText(output, "and press q or Ese exit window", Point(5, 50), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
     imshow("output", output);
+    waitKey();
 }
 
 // -------------------------------------------------------------------------
