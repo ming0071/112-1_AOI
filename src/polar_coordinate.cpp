@@ -37,7 +37,8 @@ int main(int argc, char **argv)
     // -------------------------------------------------------------------------
     // pre-process
     src = imread("..\\data\\image\\240105_2.bmp");
-    calibration(src);
+    // calibration(src);
+    dst = src;
     cvtColor(dst, dst, COLOR_BGR2GRAY);
     medianBlur(dst, dst, 3);
     threshold(dst, dst, 220, 255, THRESH_BINARY);
@@ -71,13 +72,13 @@ int main(int argc, char **argv)
     while (1)
     {
         defectSize = 0;
-        int bias = 0;
+        float bias = 1.05;
 
         if (travel < circles.size())
         {
             circleCenterX = cvRound(circles[travel][0]);
             circleCenterY = cvRound(circles[travel][1]);
-            circleRadius = cvRound(circles[travel][2]) + bias;
+            circleRadius = cvRound(circles[travel][2]) * bias;
 
             circleDetect(defectSize);
             imgMerge(srcClone, defectSize);
@@ -88,7 +89,7 @@ int main(int argc, char **argv)
         {
             circleCenterX = cvRound(circles[channel][0]);
             circleCenterY = cvRound(circles[channel][1]);
-            circleRadius = cvRound(circles[channel][2]) + bias;
+            circleRadius = cvRound(circles[channel][2]) * bias;
 
             circleDetect(defectSize);
             imgMerge(srcClone, defectSize);

@@ -1,18 +1,20 @@
+// -------------------------------------------------------------------------
+// ---                  this is an error code                            ---
+// -------------------------------------------------------------------------
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <vector>
-#include <algorithm>
 
 using namespace cv;
 using namespace std;
 
 // Constants
 // DefaultMinDist = gray.rows / 8 . DefaultParam2 is important
-const int DefaultMinDist = 60, DefaultParam1 = 85, DefaultParam2 = 35, DefaultMinRadius = 45,
+const int DefaultMinDist = 60, DefaultParam1 = 70, DefaultParam2 = 45, DefaultMinRadius = 45,
           DefaultRadmaxius = 80, MaxValue = 255;
 
 // Global variables
-Mat frame, dst, output, ROI, polarImg_Inv, diff, grayDiff, mergeIMG, srcClone;
+Mat src, dst, output, ROI, polarImg_Inv, grayDiff, mergeIMG, srcClone;
 vector<Vec3f> circles;
 int minDist, param1, param2, minRadius, Radmaxius, channel;
 int circleCenterX, circleCenterY, circleRadius, pixelValue = 155, brightness = 155, travel = 0;
@@ -27,9 +29,7 @@ void RadmaxiusCall(int, void *);
 void channelCall(int, void *);
 void calibration(const Mat &input);
 void initializeTrackbars();
-void calcCircles(const Mat &input, vector<Vec3f> &circles);
 void detectCirclesAndDraw();
-bool isCircleOutOfBounds(int centerX, int centerY, int radius, int maxWidth, int maxHeight);
 void circleDetect(double &defectSize);
 void imgMerge(Mat &srcClone, double &defectSize);
 
@@ -39,19 +39,11 @@ int main(int argc, char **argv)
     // ---                        HoughCircles                               ---
     // -------------------------------------------------------------------------
     // pre-process
-    VideoCapture capture("..\\data\\video\\0105.avi");
-    if (!capture.isOpened())
-    {
-        cout << "Cannot open the video." << endl;
-        return -1;
-    }
-    capture.read(frame);
-    // src = imread("C:\\Users\\ASUS\\Desktop\\img\\345.bmp");
-    calibration(frame);
+    src = imread("..\\data\\image\\240105_2.bmp"); // 240105_2
+    calibration(src);
     cvtColor(dst, dst, COLOR_BGR2GRAY);
     medianBlur(dst, dst, 3);
-    // threshold(dst, dst, 220, 255, THRESH_BINARY);
-    threshold(dst, dst, 0, 255, THRESH_OTSU);
+    threshold(dst, dst, 220, 255, THRESH_BINARY);
     // windows
     namedWindow("output", WINDOW_AUTOSIZE);
     initializeTrackbars();
@@ -73,50 +65,41 @@ int main(int argc, char **argv)
     namedWindow("merge", WINDOW_AUTOSIZE);
     const int InitChannel = 0, MaxChannel = circles.size() - 1;
     bool hasDefect = false;
-    double defectSize;
     createTrackbar("channel", "merge", nullptr, MaxChannel, channelCall);
     setTrackbarPos("channel", "merge", InitChannel);
 
-    while (capture.read(frame))
+    srcClone = src.clone();
+    double defectSize;
+
+    while (1)
     {
-        srcClone = frame.clone();
-        calcCircles(frame, circles);
-        while (1)
+        defectSize = 0;
+
+        if (travel < circles.size())
         {
-            defectSize = 0;
-            float bias = 1.0;
-            if (travel < circles.size())
-            {
-                circleCenterX = cvRound(circles[travel][0]);
-                circleCenterY = cvRound(circles[travel][1]);
-                circleRadius = cvRound(circles[travel][2]) * bias;
-                if (isCircleOutOfBounds(circleCenterX, circleCenterY, circleRadius, frame.cols, frame.rows))
-                    break;
+            circleCenterX = cvRound(circles[travel][0]);
+            circleCenterY = cvRound(circles[travel][1]);
+            circleRadius = cvRound(circles[travel][2]);
 
-                circleDetect(defectSize);
-                imgMerge(srcClone, defectSize);
+            circleDetect(defectSize);
+            imgMerge(srcClone, defectSize);
 
-                travel++;
-            }
-            else
+            travel++;
+        }
+        else
+        {
+            circleCenterX = cvRound(circles[channel][0]);
+            circleCenterY = cvRound(circles[channel][1]);
+            circleRadius = cvRound(circles[channel][2]);
+
+            circleDetect(defectSize);
+            imgMerge(srcClone, defectSize);
+
+            int key = waitKey(1);
+            if (key == 'q' || key == 27)
             {
-                circleCenterX = cvRound(circles[channel][0]);
-                circleCenterY = cvRound(circles[channel][1]);
-                circleRadius = cvRound(circles[channel][2]) * bias;
-                if (!isCircleOutOfBounds(circleCenterX, circleCenterY, circleRadius, frame.cols, frame.rows))
-                {
-                    circleDetect(defectSize);
-                    imgMerge(srcClone, defectSize);
-                }
-                int key = waitKey(1);
-                travel = 0;
                 break;
             }
-        }
-        int key = waitKey(1);
-        if (key == 'q' || key == 27)
-        {
-            break;
         }
     }
     destroyAllWindows();
@@ -176,10 +159,10 @@ void calibration(const Mat &input)
     fs["distCoeffs"] >> distCoeffs;
 
     undistort(input, dst, cameraMatrix, distCoeffs);
+    cout << "calibration correction..." << endl;
     fs.release();
 }
 
-// Custom comparator for sorting circles
 bool compareCircles(const Vec3f &circle1, const Vec3f &circle2)
 {
     // Sort by y-coordinate first (top to bottom)
@@ -224,18 +207,10 @@ void detectCirclesAndDraw()
     putText(output, "and press q or Ese exit window", Point(5, 50), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
     imshow("output", output);
 }
-// -------------------------------------------------------------------------
-// ---                    VOID about circle detect                       --- binary threshold
-// -------------------------------------------------------------------------
-bool isCircleOutOfBounds(int centerX, int centerY, int radius, int maxWidth, int maxHeight)
-{
-    if (centerX - radius < 0 || centerY - radius < 0)
-        return true;
-    if (centerX + radius >= maxWidth || centerY + radius >= maxHeight)
-        return true;
-    return false;
-}
 
+// -------------------------------------------------------------------------
+// ---                    VOID about circle detect                       --- binary threshold、defect method
+// -------------------------------------------------------------------------
 void drawContoursOnImage(Mat &image, const vector<vector<Point>> &contours, double &defectSize)
 {
     for (int i = 0; i < contours.size(); i++)
@@ -258,20 +233,43 @@ void processPolarCoordinates(const Mat &input, Mat &polarImg_Inv, int circleRadi
 void circleDetect(double &defectSize)
 {
     const bool isDebugMode = false;
+    Mat thresholded, blurredDst, diff, binary, grayDst;
+    Point trans_center = Point(circleRadius, circleRadius);
 
-    ROI = frame(Rect(circleCenterX - circleRadius, circleCenterY - circleRadius, 2 * circleRadius, 2 * circleRadius));
+    // 創建遮罩
+    Mat mask = Mat::zeros(src.size(), CV_8UC1);
+    circle(mask, Point(circleCenterX, circleCenterY), static_cast<int>(circleRadius * 1.2), Scalar(255), -1);
+
+    // 將遮罩應用到原始圖像
+    bitwise_and(src, src, ROI, mask);
+    cvtColor(ROI, ROI, COLOR_RGB2GRAY);
+    Mat kernel = (Mat_<int>(3, 3) << -2, -2, -2,
+                  -2, 15, -2,
+                  -2, -1, -2);
+    filter2D(ROI, ROI, -1, kernel);
+    imshow("Region of Interest", ROI);
+    threshold(ROI, thresholded, 220, 255, THRESH_BINARY);
+    HoughCircles(thresholded, circles, HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, Radmaxius);
+    for (size_t i = 0; i < circles.size(); i++)
+    {
+        Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+        circleCenterX = cvRound(circles[i][0]);
+        circleCenterY = cvRound(circles[i][1]);
+        circleRadius = cvRound(circles[i][2]); // TODO:
+        cvtColor(thresholded, thresholded, COLOR_GRAY2RGB);
+        circle(thresholded, center, circleRadius, cv::Scalar(0, 255, 0), 3, 8, 0);
+    }
+    ROI = src(Rect(circleCenterX - circleRadius, circleCenterY - circleRadius, 2 * circleRadius, 2 * circleRadius));
 
     // Process polar coordinates
     processPolarCoordinates(ROI, dst, circleRadius);
     // Process blur and difference
-    Mat blurredDst, diff, diffLow, binary, grayDst;
+
     cvtColor(dst, grayDst, COLOR_RGB2GRAY);
     blur(grayDst, blurredDst, Size(3, 501), Point(-1, -1));
     absdiff(grayDst, blurredDst, diff);
     cvtColor(diff, grayDiff, COLOR_GRAY2RGB);
     // kill hight value
-    // threshold(diff, diffLow, brightness, 255, THRESH_TOZERO_INV); // 115
-    // threshold(diff, binary, 70, 255, THRESH_BINARY);
     threshold(diff, binary, 70, 255, THRESH_BINARY);
     medianBlur(binary, binary, 3);
 
@@ -281,19 +279,19 @@ void circleDetect(double &defectSize)
     drawContoursOnImage(grayDiff, contours, defectSize);
 
     // Inverse to circle
-    warpPolar(grayDiff, polarImg_Inv, ROI.size(), Point(circleRadius, circleRadius), circleRadius, INTER_LINEAR | WARP_POLAR_LINEAR | WARP_INVERSE_MAP);
-    circle(polarImg_Inv, Point(circleRadius, circleRadius), 3, Scalar(0, 255, 0), -1, 8, 0);
-    circle(polarImg_Inv, Point(circleRadius, circleRadius), circleRadius, Scalar(255, 0, 0), 3, 8, 0);
+    warpPolar(grayDiff, polarImg_Inv, ROI.size(), trans_center, circleRadius, INTER_LINEAR | WARP_POLAR_LINEAR | WARP_INVERSE_MAP);
+    circle(polarImg_Inv, trans_center, 3, Scalar(0, 255, 0), -1, 8, 0);
+    circle(polarImg_Inv, trans_center, circleRadius, Scalar(255, 0, 0), 3, 8, 0);
 
-    if (isDebugMode)
+    if (!isDebugMode)
     {
         // imshow("Region of Interest", ROI);
         // imshow("Polar Coordinates", dst);
         // imshow("Gray Image", grayDst);
         // imshow("Blurred Image", blurredDst);
-        imshow("Difference", diff);
-        imshow("hight kill", diffLow);
-        imshow("Binary Image", binary);
+        // imshow("Difference", diff);
+        imshow("thresholded", thresholded);
+        // imshow("Binary Image", binary);
         // imshow("Inverse Polar", polarImg_Inv);
     }
 }
@@ -319,20 +317,20 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
     circle(image, center, 3, Scalar(0, 255, 0), -1, 8, 0);
     circle(image, center, radius, Scalar(255, 0, 0), 3, 8, 0);
 
-    int outsetX = frame.cols;
+    int outsetX = src.cols;
     putText(image, "Adjust channel trackbar to control image show, and click in the polar coordinate area to control brightness threshold.", Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
     putText(image, "Press q or Ese exit window", Point(5, 50), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
     putText(image, "src :", Point(10, 90), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
     putText(image, "ROI :", Point(outsetX + 10, 90), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
     putText(image, "defect :", Point(outsetX + 10, 340), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
-    putText(image, "polar coordinates :", Point(frame.cols + ROI.cols + polarImg_Inv.cols, 90), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
+    putText(image, "polar coordinates :", Point(src.cols + ROI.cols + polarImg_Inv.cols, 90), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
     putText(image, "radius = " + to_string(radius), Point(30, 120), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(255, 0, 0), 2);
     putText(image, "defectSize = " + to_string(lround(defectSize)), Point(30, 150), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(255, 0, 0), 2);
 }
 
 bool hasDefect(double &defectSize)
 {
-    if (defectSize > 2000.0) // TODO:
+    if (defectSize > 1000.0) // TODO:
         return true;
     else
         return false;
@@ -342,7 +340,7 @@ void imgMerge(Mat &srcClone, double &defectSize)
 {
     int padding = 20;
 
-    int width = frame.cols + ROI.cols + dst.cols + polarImg_Inv.cols + padding * 4;
+    int width = src.cols + ROI.cols + dst.cols + polarImg_Inv.cols + padding * 4;
     int height = max(max(ROI.rows, dst.rows), polarImg_Inv.rows) + padding * 2;
     mergeIMG = Mat3b(height, width, Vec3b(0, 0, 0));
 
@@ -352,15 +350,15 @@ void imgMerge(Mat &srcClone, double &defectSize)
     }
     // create sections
     Rect r0(padding, padding, srcClone.cols, srcClone.rows);
-    Rect r1(frame.cols + padding * 2, padding + 70, ROI.cols, ROI.rows);
-    Rect r2(frame.cols + padding * 2, padding + 360, polarImg_Inv.cols, polarImg_Inv.rows);
-    Rect r3(frame.cols + ROI.cols + polarImg_Inv.cols + padding * 3, padding, dst.cols, dst.rows);
+    Rect r1(src.cols + padding * 2, padding + 70, ROI.cols, ROI.rows);
+    Rect r2(src.cols + padding * 2, padding + 360, polarImg_Inv.cols, polarImg_Inv.rows);
+    Rect r3(src.cols + ROI.cols + polarImg_Inv.cols + padding * 3, padding, dst.cols, dst.rows);
 
     // copy images
-    copyImageRegion(srcClone, mergeIMG, Rect(0, 0, frame.cols, frame.rows), r0);
+    copyImageRegion(srcClone, mergeIMG, Rect(0, 0, src.cols, src.rows), r0);
     copyImageRegion(ROI, mergeIMG, Rect(0, 0, ROI.cols, ROI.rows), r1);
     copyImageRegion(polarImg_Inv, mergeIMG, Rect(0, 0, polarImg_Inv.cols, polarImg_Inv.rows), r2);
-    copyImageRegion(grayDiff, mergeIMG, Rect(0, 0, dst.cols, dst.rows), r3); // grayDiff
+    copyImageRegion(grayDiff, mergeIMG, Rect(0, 0, dst.cols, dst.rows), r3); // dst
 
     drawCirclesAndText(mergeIMG, circleCenterX, circleCenterY, circleRadius, defectSize);
 

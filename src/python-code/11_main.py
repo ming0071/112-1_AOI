@@ -59,7 +59,7 @@ def detect_circles(minDist, param1, param2, threshold_value):
             cv2.imshow("Selected Circle Region", selected_circle_region)
             cv2.imshow("Detected Circles", img_copy)
             cv2.imshow("Origin", image)
-            cv2.imwrite("edges.jpg", selected_circle_region)
+            cv2.imwrite("../data/image/python11.jpg", selected_circle_region)
 
     else:
         print("未偵測到圓形")
@@ -68,13 +68,13 @@ def detect_circles(minDist, param1, param2, threshold_value):
 # 其他部分保持不變
 
 # 读取相机校正参数
-fs = cv2.FileStorage('calibration.xml', cv2.FILE_STORAGE_READ)
+fs = cv2.FileStorage("../data/calibration.xml", cv2.FILE_STORAGE_READ)
 cameraMatrix = fs.getNode('cameraMatrix').mat()
 distCoeffs = fs.getNode('distCoeffs').mat()
 fs.release()
 pixel_to_mm = 25.8 / 146
 # 读取影像
-image = cv2.imread('extracted_frame.jpg')
+image = cv2.imread("../data/image/240105_2.bmp")
 
 # 校正影像
 image = cv2.undistort(image, cameraMatrix, distCoeffs)

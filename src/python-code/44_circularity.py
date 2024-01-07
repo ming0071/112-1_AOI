@@ -82,13 +82,13 @@ def detect_circles(minDist, param1, param2, threshold_value):
 # 其他部分保持不變
 
 # 读取相机校正参数
-fs = cv2.FileStorage('calibration.xml', cv2.FILE_STORAGE_READ)
+fs = cv2.FileStorage('../data/calibration.xml', cv2.FILE_STORAGE_READ)
 cameraMatrix = fs.getNode('cameraMatrix').mat()
 distCoeffs = fs.getNode('distCoeffs').mat()
 fs.release()
 pixel_to_mm = 25.8 / 146
 # 读取影像
-image = cv2.imread('edges.jpg')
+image = cv2.imread('../data/image/python11.jpg')
 
 # 校正影像
 image = cv2.undistort(image, cameraMatrix, distCoeffs)
