@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     // ---                        HoughCircles                               ---
     // -------------------------------------------------------------------------
     // pre-process
-    src = imread("..\\data\\image\\430.bmp");
+    src = imread("..\\data\\image\\240105_2.bmp");
     calibration(src);
     cvtColor(dst, dst, COLOR_BGR2GRAY);
     medianBlur(dst, dst, 3);
@@ -161,7 +161,6 @@ void calibration(const Mat &input)
     fs.release();
 }
 
-// Custom comparator for sorting circles
 bool compareCircles(const Vec3f &circle1, const Vec3f &circle2)
 {
     // Sort by y-coordinate first (top to bottom)
@@ -205,7 +204,6 @@ void detectCirclesAndDraw()
     putText(output, "Adjust trackbar to control Hough parameters,", Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
     putText(output, "and press q or Ese exit window", Point(5, 50), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
     imshow("output", output);
-    waitKey();
 }
 
 // -------------------------------------------------------------------------
@@ -306,7 +304,7 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
 
 bool hasDefect(double &defectSize)
 {
-    if (defectSize > 500.0) // TODO:
+    if (defectSize > 1000.0) // TODO:
         return true;
     else
         return false;

@@ -29,7 +29,7 @@ void calibration(const Mat &input);
 void initializeTrackbars();
 void calcCircles(const Mat &input, vector<Vec3f> &circles);
 void detectCirclesAndDraw();
-void onMouse(int event, int x, int y, int flags, void *userdata);
+bool isCircleOutOfBounds(int centerX, int centerY, int radius, int maxWidth, int maxHeight);
 void circleDetect(double &defectSize);
 void imgMerge(Mat &srcClone, double &defectSize);
 
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
     // ---                        HoughCircles                               ---
     // -------------------------------------------------------------------------
     // pre-process
-    VideoCapture capture("..\\data\\video\\camera.avi");
+    VideoCapture capture("..\\data\\video\\0105.avi");
     if (!capture.isOpened())
     {
         cout << "Cannot open the video." << endl;
@@ -76,7 +76,6 @@ int main(int argc, char **argv)
     double defectSize;
     createTrackbar("channel", "merge", nullptr, MaxChannel, channelCall);
     setTrackbarPos("channel", "merge", InitChannel);
-    setMouseCallback("merge", onMouse, NULL);
 
     while (capture.read(frame))
     {
@@ -90,6 +89,8 @@ int main(int argc, char **argv)
                 circleCenterX = cvRound(circles[travel][0]);
                 circleCenterY = cvRound(circles[travel][1]);
                 circleRadius = cvRound(circles[travel][2]) + 4;
+                if (isCircleOutOfBounds(circleCenterX, circleCenterY, circleRadius, frame.cols, frame.rows))
+                    break;
 
                 circleDetect(defectSize);
                 imgMerge(srcClone, defectSize);
@@ -101,10 +102,11 @@ int main(int argc, char **argv)
                 circleCenterX = cvRound(circles[channel][0]);
                 circleCenterY = cvRound(circles[channel][1]);
                 circleRadius = cvRound(circles[channel][2]) + 4;
-
-                circleDetect(defectSize);
-                imgMerge(srcClone, defectSize);
-
+                if (!isCircleOutOfBounds(circleCenterX, circleCenterY, circleRadius, frame.cols, frame.rows))
+                {
+                    circleDetect(defectSize);
+                    imgMerge(srcClone, defectSize);
+                }
                 int key = waitKey(1);
                 travel = 0;
                 break;
@@ -159,41 +161,6 @@ void initializeTrackbars()
     setTrackbarPosition("param2", "output", DefaultParam2, param2Call);
     setTrackbarPosition("minRadius", "output", DefaultMinRadius, minRadiusCall);
     setTrackbarPosition("Radmaxius", "output", DefaultRadmaxius, RadmaxiusCall);
-}
-
-void onMouse(int event, int x, int y, int flags, void *userdata)
-{
-    int B, G, R;
-    if ((x < 1460) && (x > 1160) && (y > 20) && (y < 620))
-    {
-        B = static_cast<int>(mergeIMG.at<Vec3b>(y, x)[0]);
-        G = static_cast<int>(mergeIMG.at<Vec3b>(y, x)[1]);
-        R = static_cast<int>(mergeIMG.at<Vec3b>(y, x)[2]);
-
-        if (event == EVENT_MOUSEMOVE)
-        {
-            if (prevMousePosition.x != -1 && prevMousePosition.y != -1)
-            {
-                prevMousePosition.x = x;
-                prevMousePosition.y = y;
-                setMouseCallback("merge", onMouse, NULL);
-            }
-            else
-            {
-
-                pixelValue = 0.299 * R + 0.587 * G + 0.114 * B;
-                // cout << "Mouse stopped at (" << x << ", " << y << "), Pixel Value: " << pixelValue << endl;
-            }
-        }
-        if (event == EVENT_LBUTTONDOWN)
-        {
-            brightness = 0.299 * R + 0.587 * G + 0.114 * B;
-            // cout << "Mouse clicked at (" << x << ", " << y << "), Pixel Value: " << brightness << "... clicked !" << endl;
-            // recall NG calculation
-            srcClone = frame.clone();
-            travel = 0;
-        }
-    }
 }
 
 // -------------------------------------------------------------------------
@@ -259,6 +226,15 @@ void detectCirclesAndDraw()
 // -------------------------------------------------------------------------
 // ---                    VOID about circle detect                       --- binary threshold
 // -------------------------------------------------------------------------
+bool isCircleOutOfBounds(int centerX, int centerY, int radius, int maxWidth, int maxHeight)
+{
+    if (centerX - radius < 0 || centerY - radius < 0)
+        return true;
+    if (centerX + radius >= maxWidth || centerY + radius >= maxHeight)
+        return true;
+    return false;
+}
+
 void drawContoursOnImage(Mat &image, const vector<vector<Point>> &contours, double &defectSize)
 {
     for (int i = 0; i < contours.size(); i++)
@@ -291,20 +267,20 @@ void circleDetect(double &defectSize)
     cvtColor(dst, grayDst, COLOR_RGB2GRAY);
     blur(grayDst, blurredDst, Size(3, 501), Point(-1, -1));
     absdiff(grayDst, blurredDst, diff);
-    // cvtColor(diff, dst, COLOR_GRAY2RGB);
+    cvtColor(diff, grayDiff, COLOR_GRAY2RGB);
     // kill hight value
     // threshold(diff, diffLow, brightness, 255, THRESH_TOZERO_INV); // 115
     // threshold(diff, binary, 70, 255, THRESH_BINARY);
-    threshold(diff, binary, 0, 255, THRESH_OTSU);
+    threshold(diff, binary, 70, 255, THRESH_BINARY);
     medianBlur(binary, binary, 3);
 
     // Find contours and draw defects
     vector<vector<Point>> contours;
     findContours(binary, contours, RETR_EXTERNAL, CHAIN_APPROX_NONE, Point());
-    drawContoursOnImage(dst, contours, defectSize);
+    drawContoursOnImage(grayDiff, contours, defectSize);
 
     // Inverse to circle
-    warpPolar(dst, polarImg_Inv, ROI.size(), Point(circleRadius, circleRadius), circleRadius, INTER_LINEAR | WARP_POLAR_LINEAR | WARP_INVERSE_MAP);
+    warpPolar(grayDiff, polarImg_Inv, ROI.size(), Point(circleRadius, circleRadius), circleRadius, INTER_LINEAR | WARP_POLAR_LINEAR | WARP_INVERSE_MAP);
     circle(polarImg_Inv, Point(circleRadius, circleRadius), 3, Scalar(0, 255, 0), -1, 8, 0);
     circle(polarImg_Inv, Point(circleRadius, circleRadius), circleRadius, Scalar(255, 0, 0), 3, 8, 0);
 
@@ -357,7 +333,7 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
 
 bool hasDefect(double &defectSize)
 {
-    if (defectSize > 1000.0)
+    if (defectSize > 1000.0) // TODO:
         return true;
     else
         return false;
@@ -385,7 +361,7 @@ void imgMerge(Mat &srcClone, double &defectSize)
     copyImageRegion(srcClone, mergeIMG, Rect(0, 0, frame.cols, frame.rows), r0);
     copyImageRegion(ROI, mergeIMG, Rect(0, 0, ROI.cols, ROI.rows), r1);
     copyImageRegion(polarImg_Inv, mergeIMG, Rect(0, 0, polarImg_Inv.cols, polarImg_Inv.rows), r2);
-    copyImageRegion(dst, mergeIMG, Rect(0, 0, dst.cols, dst.rows), r3); // grayDiff
+    copyImageRegion(grayDiff, mergeIMG, Rect(0, 0, dst.cols, dst.rows), r3); // grayDiff
 
     drawCirclesAndText(mergeIMG, circleCenterX, circleCenterY, circleRadius, defectSize);
 
