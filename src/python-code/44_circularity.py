@@ -73,7 +73,7 @@ def detect_circles(minDist, param1, param2, threshold_value):
             cv2.imshow("Selected Circle Region", selected_circle_region)
             cv2.imshow("Detected Circles", img_copy)
             cv2.imshow("Origin", image)
-            cv2.imwrite("edges_2.jpg", selected_circle_region)
+            cv2.imwrite("../data/image/python44.jpg", selected_circle_region)
 
     else:
         print("未偵測到圓形")
