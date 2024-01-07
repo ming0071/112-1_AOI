@@ -132,7 +132,7 @@ else:
 #endregion
 # Continuous image display
 
-
+    
 cv2.namedWindow('SimpleLive_Python_uEye_OpenCV')
 out = cv2.VideoWriter('.\\data\\video\\output.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 30, (width.value, height.value))
 print(width)

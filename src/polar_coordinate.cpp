@@ -27,7 +27,6 @@ void channelCall(int, void *);
 void calibration(const Mat &input);
 void initializeTrackbars();
 void detectCirclesAndDraw();
-void onMouse(int event, int x, int y, int flags, void *userdata);
 void circleDetect(double &defectSize);
 void imgMerge(Mat &srcClone, double &defectSize);
 
@@ -65,7 +64,6 @@ int main(int argc, char **argv)
     bool hasDefect = false;
     createTrackbar("channel", "merge", nullptr, MaxChannel, channelCall);
     setTrackbarPos("channel", "merge", InitChannel);
-    setMouseCallback("merge", onMouse, NULL);
 
     srcClone = src.clone();
     double defectSize;
@@ -147,40 +145,6 @@ void initializeTrackbars()
     setTrackbarPosition("Radmaxius", "output", DefaultRadmaxius, RadmaxiusCall);
 }
 
-void onMouse(int event, int x, int y, int flags, void *userdata)
-{
-    int B, G, R;
-    if ((x < 1460) && (x > 1160) && (y > 20) && (y < 620))
-    {
-        B = static_cast<int>(mergeIMG.at<Vec3b>(y, x)[0]);
-        G = static_cast<int>(mergeIMG.at<Vec3b>(y, x)[1]);
-        R = static_cast<int>(mergeIMG.at<Vec3b>(y, x)[2]);
-
-        if (event == EVENT_MOUSEMOVE)
-        {
-            if (prevMousePosition.x != -1 && prevMousePosition.y != -1)
-            {
-                prevMousePosition.x = x;
-                prevMousePosition.y = y;
-                setMouseCallback("merge", onMouse, NULL);
-            }
-            else
-            {
-                pixelValue = 0.299 * R + 0.587 * G + 0.114 * B;
-                // cout << "Mouse stopped at (" << x << ", " << y << "), Pixel Value: " << pixelValue << endl;
-            }
-        }
-        if (event == EVENT_LBUTTONDOWN)
-        {
-            brightness = 0.299 * R + 0.587 * G + 0.114 * B;
-            // cout << "Mouse clicked at (" << x << ", " << y << "), Pixel Value: " << brightness << "... clicked !" << endl;
-            // recall NG calculation
-            srcClone = src.clone();
-            travel = 0;
-        }
-    }
-}
-
 // -------------------------------------------------------------------------
 // ---                    VOID about HoughtCircle                        ---
 // -------------------------------------------------------------------------
@@ -193,6 +157,7 @@ void calibration(const Mat &input)
     fs["distCoeffs"] >> distCoeffs;
 
     undistort(input, dst, cameraMatrix, distCoeffs);
+    cout << "calibration correction..." << endl;
     fs.release();
 }
 
@@ -230,7 +195,7 @@ void detectCirclesAndDraw()
 }
 
 // -------------------------------------------------------------------------
-// ---                    VOID about circle detect                       --- binary threshold
+// ---                    VOID about circle detect                       --- binary threshold、defect method
 // -------------------------------------------------------------------------
 void drawContoursOnImage(Mat &image, const vector<vector<Point>> &contours, double &defectSize)
 {
@@ -254,6 +219,7 @@ void processPolarCoordinates(const Mat &input, Mat &polarImg_Inv, int circleRadi
 void circleDetect(double &defectSize)
 {
     const bool isDebugMode = false;
+    Point trans_center = Point(circleRadius, circleRadius);
 
     ROI = src(Rect(circleCenterX - circleRadius, circleCenterY - circleRadius, 2 * circleRadius, 2 * circleRadius));
 
@@ -266,8 +232,7 @@ void circleDetect(double &defectSize)
     absdiff(grayDst, blurredDst, diff);
     cvtColor(diff, grayDiff, COLOR_GRAY2RGB);
     // kill hight value
-    threshold(diff, diffLow, brightness, 255, THRESH_TOZERO_INV); // 115
-    threshold(diffLow, binary, 70, 255, THRESH_BINARY);
+    threshold(diff, binary, 70, 255, THRESH_BINARY);
     medianBlur(binary, binary, 3);
 
     // Find contours and draw defects
@@ -276,9 +241,9 @@ void circleDetect(double &defectSize)
     drawContoursOnImage(grayDiff, contours, defectSize);
 
     // Inverse to circle
-    warpPolar(grayDiff, polarImg_Inv, ROI.size(), Point(circleRadius, circleRadius), circleRadius, INTER_LINEAR | WARP_POLAR_LINEAR | WARP_INVERSE_MAP);
-    circle(polarImg_Inv, Point(circleRadius, circleRadius), 3, Scalar(0, 255, 0), -1, 8, 0);
-    circle(polarImg_Inv, Point(circleRadius, circleRadius), circleRadius, Scalar(255, 0, 0), 3, 8, 0);
+    warpPolar(grayDiff, polarImg_Inv, ROI.size(), trans_center, circleRadius, INTER_LINEAR | WARP_POLAR_LINEAR | WARP_INVERSE_MAP);
+    circle(polarImg_Inv, trans_center, 3, Scalar(0, 255, 0), -1, 8, 0);
+    circle(polarImg_Inv, trans_center, circleRadius, Scalar(255, 0, 0), 3, 8, 0);
 
     if (isDebugMode)
     {
@@ -323,8 +288,6 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
     putText(image, "polar coordinates :", Point(src.cols + ROI.cols + polarImg_Inv.cols, 90), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
     putText(image, "radius = " + to_string(radius), Point(30, 120), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(255, 0, 0), 2);
     putText(image, "defectSize = " + to_string(lround(defectSize)), Point(30, 150), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(255, 0, 0), 2);
-    putText(image, "pixelValue = " + to_string(pixelValue), Point(30, 180), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(255, 0, 0), 2);
-    putText(image, "brightness = " + to_string(brightness), Point(30, 210), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(255, 0, 0), 2);
 }
 
 bool hasDefect(double &defectSize)
