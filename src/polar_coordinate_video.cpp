@@ -8,15 +8,15 @@ using namespace std;
 
 // Constants
 // DefaultMinDist = gray.rows / 8 . DefaultParam2 is important
-const int DefaultMinDist = 60, DefaultParam1 = 60, DefaultParam2 = 25, DefaultMinRadius = 48,
-          DefaultRadmaxius = 63, MaxValue = 255;
+const int DefaultMinDist = 60, DefaultParam1 = 60, DefaultParam2 = 24, DefaultMinRadius = 48,
+          DefaultRadmaxius = 61, MaxValue = 255;
 
 // Global variables
 Mat frame, dst, output, ROI, polarImg_Inv, diff, grayDiff, mergeIMG, srcClone;
 vector<Vec3f> circles;
 int minDist, param1, param2, minRadius, Radmaxius, channel;
 int circleCenterX, circleCenterY, circleRadius, pixelValue = 155, brightness = 155, travel = 0;
-Point prevMousePosition(-1, -1);
+const float bias = 1.05;
 
 // Function prototypes
 void minDistCall(int, void *);
@@ -46,6 +46,11 @@ int main(int argc, char **argv)
         return -1;
     }
     capture.read(frame);
+    capture.read(frame);
+    capture.read(frame);
+    capture.read(frame);
+    capture.read(frame);
+    capture.read(frame);
     // src = imread("C:\\Users\\ASUS\\Desktop\\img\\345.bmp");
     // calibration(frame);
     dst = frame;
@@ -73,6 +78,7 @@ int main(int argc, char **argv)
     // -------------------------------------------------------------------------
     namedWindow("merge", WINDOW_AUTOSIZE);
     const int InitChannel = 0, MaxChannel = circles.size() - 1;
+    int frameNum = 0;
     bool hasDefect = false;
     double defectSize;
     createTrackbar("channel", "merge", nullptr, MaxChannel, channelCall);
@@ -80,26 +86,26 @@ int main(int argc, char **argv)
 
     while (capture.read(frame))
     {
+        frameNum++;
         srcClone = frame.clone();
         calcCircles(frame, circles);
         while (1)
         {
             defectSize = 0;
-            float bias = 1.05;
             if (travel < circles.size())
             {
                 circleCenterX = cvRound(circles[travel][0]);
                 circleCenterY = cvRound(circles[travel][1]);
                 circleRadius = cvRound(circles[travel][2]) * bias;
+
                 if (isCircleOutOfBounds(circleCenterX, circleCenterY, circleRadius, frame.cols, frame.rows))
                 {
-                    if (defectSize != 0)
+                    if (frameNum > 10)
                     {
                         imgMerge(srcClone, defectSize);
                     }
                     break;
                 }
-
                 circleDetect(defectSize);
                 imgMerge(srcClone, defectSize);
 
@@ -115,11 +121,11 @@ int main(int argc, char **argv)
                     circleDetect(defectSize);
                     imgMerge(srcClone, defectSize);
                 }
-                travel = 0;
-                if (defectSize != 0)
+                if (frameNum > 10)
                 {
                     imgMerge(srcClone, defectSize);
                 }
+                travel = 0;
                 break;
             }
         }
@@ -208,6 +214,8 @@ void calcCircles(const Mat &input, vector<Vec3f> &circles)
     if (input.type() == CV_8UC3)
     {
         cvtColor(input, temp, COLOR_BGR2GRAY);
+        medianBlur(temp, temp, 1);
+        threshold(temp, temp, 0, 255, THRESH_OTSU);
         morphologyEx(temp, temp, MORPH_OPEN, kernel);
     }
     else
@@ -219,7 +227,6 @@ void calcCircles(const Mat &input, vector<Vec3f> &circles)
     // erode(temp, temp, kernel);
     // imshow("erode 1",temp);
     // imshow("dilate 1",temp);
-    // morphologyEx(input, temp, MORPH_OPEN, kernel);
     // imshow("temp", temp);
     //----------------------------------------
     vector<vector<Point>> contours;
@@ -241,10 +248,10 @@ void calcCircles(const Mat &input, vector<Vec3f> &circles)
         contours.erase(contours.begin() + maxAreaIdx);
     }
     Mat result = Mat::zeros(temp.size(), CV_8UC1);
-    drawContours(result, contours, -1, Scalar(255), 0.1);
+    drawContours(result, contours, -1, Scalar(255), 0.5);
     //----------------------------------------
     // imshow("result", result);
-
+    // Canny(temp, temp, 50, 150);
     HoughCircles(result, circles, HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, Radmaxius);
     sort(circles.begin(), circles.end(), compareCircles);
 }
@@ -253,7 +260,7 @@ void drawCircle(Mat &input, const vector<Vec3f> &circles)
     for (int i = 0; i < circles.size(); i++)
     {
         Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-        int radius = cvRound(circles[i][2]);
+        float radius = cvRound(circles[i][2]);
         circle(input, center, radius, Scalar(0, 0, 255), 3, 8, 0);
     }
 }
@@ -343,9 +350,9 @@ void circleDetect(double &defectSize)
 // -------------------------------------------------------------------------
 // ---                   VOID about image merge                          --- defectSize
 // -------------------------------------------------------------------------
-void copyImageRegion(Mat &src, Mat &dest, Rect sourceRect, Rect destRect)
+void copyImageRegion(Mat &frame, Mat &dest, Rect sourceRect, Rect destRect)
 {
-    Mat srcClone = src.clone();
+    Mat srcClone = frame.clone();
     srcClone.copyTo(dest(destRect));
 }
 
@@ -362,8 +369,7 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
     circle(image, center, radius, Scalar(255, 0, 0), 3, 8, 0);
 
     int outsetX = frame.cols;
-    putText(image, "Adjust channel trackbar to control image show, and click in the polar coordinate area to control brightness threshold.", Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
-    putText(image, "Press q or Ese exit window", Point(5, 50), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
+    putText(image, "Adjust channel trackbar to control image show, Press q or Ese exit window.", Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
     putText(image, "src :", Point(10, 90), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
     putText(image, "ROI :", Point(outsetX + 10, 90), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
     putText(image, "defect :", Point(outsetX + 10, 340), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
@@ -374,7 +380,7 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
 
 bool hasDefect(double &defectSize)
 {
-    if (defectSize > 700.0) // TODO:
+    if ((defectSize > 400.0) && (defectSize < 2000.0)) // TODO:
         return true;
     else
         return false;

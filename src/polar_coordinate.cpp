@@ -7,15 +7,15 @@ using namespace std;
 
 // Constants
 // DefaultMinDist = gray.rows / 8 . DefaultParam2 is important
-const int DefaultMinDist = 60, DefaultParam1 = 60, DefaultParam2 = 25, DefaultMinRadius = 48,
-          DefaultRadmaxius = 63, MaxValue = 255;
+const int DefaultMinDist = 60, DefaultParam1 = 60, DefaultParam2 = 24, DefaultMinRadius = 48,
+          DefaultRadmaxius = 61, MaxValue = 255;
 
 // Global variables
 Mat src, dst, output, ROI, polarImg_Inv, grayDiff, mergeIMG, srcClone;
 vector<Vec3f> circles;
 int minDist, param1, param2, minRadius, Radmaxius, channel;
 int circleCenterX, circleCenterY, circleRadius, pixelValue = 155, brightness = 155, travel = 0;
-Point prevMousePosition(-1, -1);
+float bias = 1.08;
 
 // Function prototypes
 void minDistCall(int, void *);
@@ -72,8 +72,6 @@ int main(int argc, char **argv)
     while (1)
     {
         defectSize = 0;
-        float bias = 1.08;
-
         if (travel < circles.size())
         {
             circleCenterX = cvRound(circles[travel][0]);
@@ -191,7 +189,6 @@ void calcCircles(const Mat &input, vector<Vec3f> &circles)
     // erode(temp, temp, kernel);
     // imshow("erode 1",temp);
     // imshow("dilate 1",temp);
-    // morphologyEx(input, temp, MORPH_OPEN, kernel);
     // imshow("temp", temp);
     //----------------------------------------
     vector<vector<Point>> contours;
@@ -226,7 +223,7 @@ void drawCircle(Mat &input, const vector<Vec3f> &circles)
     for (int i = 0; i < circles.size(); i++)
     {
         Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-        int radius = cvRound(circles[i][2]);
+        float radius = cvRound(circles[i][2]);
         circle(input, center, radius, Scalar(0, 0, 255), 3, 8, 0);
     }
 }
@@ -339,7 +336,7 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
 
 bool hasDefect(double &defectSize)
 {
-    if (defectSize > 300.0) // TODO: video  700
+    if (defectSize > 150.0) // TODO: video  700
         return true;
     else
         return false;
