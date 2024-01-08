@@ -47,7 +47,8 @@ int main(int argc, char **argv)
     }
     capture.read(frame);
     // src = imread("C:\\Users\\ASUS\\Desktop\\img\\345.bmp");
-    calibration(frame);
+    // calibration(frame);
+    dst = frame;
     cvtColor(dst, dst, COLOR_BGR2GRAY);
     medianBlur(dst, dst, 3);
     // threshold(dst, dst, 220, 255, THRESH_BINARY);
@@ -306,7 +307,7 @@ void circleDetect(double &defectSize)
     // Process polar coordinates
     processPolarCoordinates(ROI, dst, circleRadius);
     // Process blur and difference
-    Mat blurredDst, diff, diffLow, binary, grayDst;
+    Mat blurredDst, diff, binary, grayDst;
     cvtColor(dst, grayDst, COLOR_RGB2GRAY);
     blur(grayDst, blurredDst, Size(3, 501), Point(-1, -1));
     absdiff(grayDst, blurredDst, diff);
@@ -334,7 +335,6 @@ void circleDetect(double &defectSize)
         // imshow("Gray Image", grayDst);
         // imshow("Blurred Image", blurredDst);
         imshow("Difference", diff);
-        imshow("hight kill", diffLow);
         imshow("Binary Image", binary);
         // imshow("Inverse Polar", polarImg_Inv);
     }
