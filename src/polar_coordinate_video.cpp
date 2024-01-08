@@ -13,7 +13,7 @@ const int DefaultMinDist = 60, DefaultParam1 = 60, DefaultParam2 = 24, DefaultMi
 const float bias = 1.05;
 
 // Global variables
-Mat frame, dst, output, ROI, polarImg_Inv, diff, grayDiff, mergeIMG, srcClone;
+Mat frame, dst, output, ROI, polarImg_Inv, diff, diffC3, mergeIMG, srcClone;
 vector<Vec3f> circles;
 int minDist, param1, param2, minRadius, Radmaxius, channel;
 int circleCenterX, circleCenterY, circleRadius, pixelValue = 155, brightness = 155, travel = 0;
@@ -47,19 +47,11 @@ int main(int argc, char **argv)
         return -1;
     }
     capture.read(frame);
-    capture.read(frame);
-    capture.read(frame);
-    capture.read(frame);
-    capture.read(frame);
-    capture.read(frame);
-    // src = imread("C:\\Users\\ASUS\\Desktop\\img\\345.bmp");
     // calibration(frame);
-    dst = frame;
-    cvtColor(dst, dst, COLOR_BGR2GRAY);
+    cvtColor(frame, dst, COLOR_BGR2GRAY);
     medianBlur(dst, dst, 3);
-    // threshold(dst, dst, 220, 255, THRESH_BINARY);
     threshold(dst, dst, 0, 255, THRESH_OTSU);
-    // windows
+    // window
     namedWindow("output", WINDOW_AUTOSIZE);
     initializeTrackbars();
 
@@ -228,13 +220,7 @@ void calcCircles(const Mat &input, vector<Vec3f> &circles)
     {
         morphologyEx(input, temp, MORPH_OPEN, kernel);
     }
-
-    // dilate(input, temp, kernel);
-    // erode(temp, temp, kernel);
-    // imshow("erode 1",temp);
-    // imshow("dilate 1",temp);
-    // imshow("temp", temp);
-    //----------------------------------------
+    // Remove the outermost
     vector<vector<Point>> contours;
     findContours(temp, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
 
@@ -255,12 +241,11 @@ void calcCircles(const Mat &input, vector<Vec3f> &circles)
     }
     Mat result = Mat::zeros(temp.size(), CV_8UC1);
     drawContours(result, contours, -1, Scalar(255), 0.5);
-    //----------------------------------------
-    // imshow("result", result);
-    // Canny(temp, temp, 50, 150);
+
     HoughCircles(result, circles, HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, Radmaxius);
     sort(circles.begin(), circles.end(), compareCircles);
 }
+
 void drawCircle(Mat &input, const vector<Vec3f> &circles)
 {
     for (int i = 0; i < circles.size(); i++)
@@ -324,20 +309,17 @@ void circleDetect(double &defectSize)
     cvtColor(dst, grayDst, COLOR_RGB2GRAY);
     blur(grayDst, blurredDst, Size(3, 501), Point(-1, -1));
     absdiff(grayDst, blurredDst, diff);
-    cvtColor(diff, grayDiff, COLOR_GRAY2RGB);
-    // kill hight value
-    // threshold(diff, diffLow, brightness, 255, THRESH_TOZERO_INV); // 115
-    // threshold(diff, binary, 70, 255, THRESH_BINARY);
+    cvtColor(diff, diffC3, COLOR_GRAY2RGB);
     threshold(diff, binary, 70, 255, THRESH_BINARY);
     medianBlur(binary, binary, 3);
 
     // Find contours and draw defects
     vector<vector<Point>> contours;
     findContours(binary, contours, RETR_EXTERNAL, CHAIN_APPROX_NONE, Point());
-    drawContoursOnImage(grayDiff, contours, defectSize);
+    drawContoursOnImage(diffC3, contours, defectSize);
 
     // Inverse to circle
-    warpPolar(grayDiff, polarImg_Inv, ROI.size(), Point(circleRadius, circleRadius), circleRadius, INTER_LINEAR | WARP_POLAR_LINEAR | WARP_INVERSE_MAP);
+    warpPolar(diffC3, polarImg_Inv, ROI.size(), Point(circleRadius, circleRadius), circleRadius, INTER_LINEAR | WARP_POLAR_LINEAR | WARP_INVERSE_MAP);
     circle(polarImg_Inv, Point(circleRadius, circleRadius), 3, Scalar(0, 255, 0), -1, 8, 0);
     circle(polarImg_Inv, Point(circleRadius, circleRadius), circleRadius, Scalar(255, 0, 0), 3, 8, 0);
 
@@ -414,7 +396,7 @@ void imgMerge(int num, Mat &srcClone, double &defectSize)
     copyImageRegion(srcClone, mergeIMG, Rect(0, 0, frame.cols, frame.rows), r0);
     copyImageRegion(ROI, mergeIMG, Rect(0, 0, ROI.cols, ROI.rows), r1);
     copyImageRegion(polarImg_Inv, mergeIMG, Rect(0, 0, polarImg_Inv.cols, polarImg_Inv.rows), r2);
-    copyImageRegion(grayDiff, mergeIMG, Rect(0, 0, dst.cols, dst.rows), r3); // grayDiff
+    copyImageRegion(diffC3, mergeIMG, Rect(0, 0, dst.cols, dst.rows), r3);
 
     drawCirclesAndText(mergeIMG, circleCenterX, circleCenterY, circleRadius, defectSize);
 
