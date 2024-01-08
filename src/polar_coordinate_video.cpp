@@ -8,8 +8,8 @@ using namespace std;
 
 // Constants
 // DefaultMinDist = gray.rows / 8 . DefaultParam2 is important
-const int DefaultMinDist = 60, DefaultParam1 = 85, DefaultParam2 = 35, DefaultMinRadius = 45,
-          DefaultRadmaxius = 80, MaxValue = 255;
+const int DefaultMinDist = 60, DefaultParam1 = 60, DefaultParam2 = 25, DefaultMinRadius = 48,
+          DefaultRadmaxius = 63, MaxValue = 255;
 
 // Global variables
 Mat frame, dst, output, ROI, polarImg_Inv, diff, grayDiff, mergeIMG, srcClone;
@@ -84,14 +84,20 @@ int main(int argc, char **argv)
         while (1)
         {
             defectSize = 0;
-            float bias = 1.0;
+            float bias = 1.05;
             if (travel < circles.size())
             {
                 circleCenterX = cvRound(circles[travel][0]);
                 circleCenterY = cvRound(circles[travel][1]);
                 circleRadius = cvRound(circles[travel][2]) * bias;
                 if (isCircleOutOfBounds(circleCenterX, circleCenterY, circleRadius, frame.cols, frame.rows))
+                {
+                    if (defectSize != 0)
+                    {
+                        imgMerge(srcClone, defectSize);
+                    }
                     break;
+                }
 
                 circleDetect(defectSize);
                 imgMerge(srcClone, defectSize);
@@ -108,8 +114,11 @@ int main(int argc, char **argv)
                     circleDetect(defectSize);
                     imgMerge(srcClone, defectSize);
                 }
-                int key = waitKey(1);
                 travel = 0;
+                if (defectSize != 0)
+                {
+                    imgMerge(srcClone, defectSize);
+                }
                 break;
             }
         }
@@ -193,18 +202,51 @@ bool compareCircles(const Vec3f &circle1, const Vec3f &circle2)
 
 void calcCircles(const Mat &input, vector<Vec3f> &circles)
 {
-    Mat temp, contours;
+    Mat temp;
     Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
-    // erode(input, temp, kernel);
+    if (input.type() == CV_8UC3)
+    {
+        cvtColor(input, temp, COLOR_BGR2GRAY);
+        morphologyEx(temp, temp, MORPH_OPEN, kernel);
+    }
+    else
+    {
+        morphologyEx(input, temp, MORPH_OPEN, kernel);
+    }
+
+    // dilate(input, temp, kernel);
+    // erode(temp, temp, kernel);
     // imshow("erode 1",temp);
-    // dilate(temp, temp, kernel);
     // imshow("dilate 1",temp);
-    morphologyEx(input, temp, MORPH_OPEN, kernel);
-    Canny(temp, contours, 50, 150);
-    HoughCircles(contours, circles, HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, Radmaxius);
+    // morphologyEx(input, temp, MORPH_OPEN, kernel);
+    // imshow("temp", temp);
+    //----------------------------------------
+    vector<vector<Point>> contours;
+    findContours(temp, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+
+    if (contours.size() > 1)
+    {
+        double maxArea = 0;
+        int maxAreaIdx = -1;
+        for (int i = 0; i < contours.size(); i++)
+        {
+            double area = contourArea(contours[i]);
+            if (area > maxArea)
+            {
+                maxArea = area;
+                maxAreaIdx = i;
+            }
+        }
+        contours.erase(contours.begin() + maxAreaIdx);
+    }
+    Mat result = Mat::zeros(temp.size(), CV_8UC1);
+    drawContours(result, contours, -1, Scalar(255), 0.1);
+    //----------------------------------------
+    // imshow("result", result);
+
+    HoughCircles(result, circles, HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, Radmaxius);
     sort(circles.begin(), circles.end(), compareCircles);
 }
-
 void drawCircle(Mat &input, const vector<Vec3f> &circles)
 {
     for (int i = 0; i < circles.size(); i++)
@@ -332,7 +374,7 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
 
 bool hasDefect(double &defectSize)
 {
-    if (defectSize > 2000.0) // TODO:
+    if (defectSize > 700.0) // TODO:
         return true;
     else
         return false;

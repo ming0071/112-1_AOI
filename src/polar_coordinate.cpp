@@ -7,8 +7,8 @@ using namespace std;
 
 // Constants
 // DefaultMinDist = gray.rows / 8 . DefaultParam2 is important
-const int DefaultMinDist = 60, DefaultParam1 = 70, DefaultParam2 = 45, DefaultMinRadius = 45,
-          DefaultRadmaxius = 80, MaxValue = 255;
+const int DefaultMinDist = 60, DefaultParam1 = 60, DefaultParam2 = 25, DefaultMinRadius = 48,
+          DefaultRadmaxius = 63, MaxValue = 255;
 
 // Global variables
 Mat src, dst, output, ROI, polarImg_Inv, grayDiff, mergeIMG, srcClone;
@@ -72,7 +72,7 @@ int main(int argc, char **argv)
     while (1)
     {
         defectSize = 0;
-        float bias = 1.05;
+        float bias = 1.08;
 
         if (travel < circles.size())
         {
@@ -175,15 +175,49 @@ bool compareCircles(const Vec3f &circle1, const Vec3f &circle2)
 
 void calcCircles(const Mat &input, vector<Vec3f> &circles)
 {
-    Mat temp, contours;
+    Mat temp;
     Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
-    // erode(input, temp, kernel);
+    if (input.type() == CV_8UC3)
+    {
+        cvtColor(input, temp, COLOR_BGR2GRAY);
+        morphologyEx(temp, temp, MORPH_OPEN, kernel);
+    }
+    else
+    {
+        morphologyEx(input, temp, MORPH_OPEN, kernel);
+    }
+
+    // dilate(input, temp, kernel);
+    // erode(temp, temp, kernel);
     // imshow("erode 1",temp);
-    // dilate(temp, temp, kernel);
     // imshow("dilate 1",temp);
-    morphologyEx(input, temp, MORPH_OPEN, kernel);
-    Canny(temp, contours, 50, 150);
-    HoughCircles(contours, circles, HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, Radmaxius);
+    // morphologyEx(input, temp, MORPH_OPEN, kernel);
+    // imshow("temp", temp);
+    //----------------------------------------
+    vector<vector<Point>> contours;
+    findContours(temp, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+
+    if (contours.size() > 1)
+    {
+        double maxArea = 0;
+        int maxAreaIdx = -1;
+        for (int i = 0; i < contours.size(); i++)
+        {
+            double area = contourArea(contours[i]);
+            if (area > maxArea)
+            {
+                maxArea = area;
+                maxAreaIdx = i;
+            }
+        }
+        contours.erase(contours.begin() + maxAreaIdx);
+    }
+    Mat result = Mat::zeros(temp.size(), CV_8UC1);
+    drawContours(result, contours, -1, Scalar(255), 0.1);
+    //----------------------------------------
+    // imshow("result", result);
+
+    HoughCircles(result, circles, HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, Radmaxius);
     sort(circles.begin(), circles.end(), compareCircles);
 }
 
@@ -199,12 +233,13 @@ void drawCircle(Mat &input, const vector<Vec3f> &circles)
 
 void detectCirclesAndDraw()
 {
+    Mat draw = src.clone();
     calcCircles(dst, circles);
-    cvtColor(dst, output, COLOR_GRAY2BGR);
-    drawCircle(output, circles);
-    putText(output, "Adjust trackbar to control Hough parameters,", Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
-    putText(output, "and press q or Ese exit window", Point(5, 50), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
-    imshow("output", output);
+    // cvtColor(draw, draw, COLOR_GRAY2BGR);
+    drawCircle(draw, circles);
+    putText(draw, "Adjust trackbar to control Hough parameters,", Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
+    putText(draw, "and press q or Ese exit window", Point(5, 50), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
+    imshow("output", draw);
 }
 
 // -------------------------------------------------------------------------
@@ -239,7 +274,7 @@ void circleDetect(double &defectSize)
     // Process polar coordinates
     processPolarCoordinates(ROI, dst, circleRadius);
     // Process blur and difference
-    Mat blurredDst, diff, diffLow, binary, grayDst;
+    Mat blurredDst, diff, binary, grayDst;
     cvtColor(dst, grayDst, COLOR_RGB2GRAY);
     blur(grayDst, blurredDst, Size(3, 501), Point(-1, -1));
     absdiff(grayDst, blurredDst, diff);
@@ -265,7 +300,6 @@ void circleDetect(double &defectSize)
         // imshow("Gray Image", grayDst);
         // imshow("Blurred Image", blurredDst);
         imshow("Difference", diff);
-        imshow("hight kill", diffLow);
         imshow("Binary Image", binary);
         // imshow("Inverse Polar", polarImg_Inv);
     }
@@ -305,7 +339,7 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
 
 bool hasDefect(double &defectSize)
 {
-    if (defectSize > 1000.0) // TODO:
+    if (defectSize > 300.0) // TODO: video  700
         return true;
     else
         return false;
