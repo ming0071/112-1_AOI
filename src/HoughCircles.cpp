@@ -9,8 +9,8 @@ Mat src, dst, output;
 vector<Vec3f> circles;
 // 1, 60, 70, 50, 60, 80
 // DefaultMinDist = gray.rows / 8
-const int DefaultMinDist = 60, DefaultParam1 = 70, DefaultParam2 = 45, DefaultMinRadius = 60,
-          DefaultRadmaxius = 80, MaxValue = 255;
+const int DefaultMinDist = 60, DefaultParam1 = 60, DefaultParam2 = 24, DefaultMinRadius = 48,
+          DefaultRadmaxius = 61, MaxValue = 255;
 int minDist, param1, param2, minRadius, Radmaxius, thresholdVal;
 
 void minDistCall(int, void *);
@@ -27,7 +27,7 @@ void drawCircle(Mat &input, const vector<Vec3f> &circles);
 int main(int argc, char **argv)
 {
     // pre-process
-    src = imread("..\\data\\image\\345.bmp");
+    src = imread("..\\data\\image\\240105_2.bmp");
     // -------------------------------------------------------------------------
     // -------------                 threshold                  ----------------
     // -------------------------------------------------------------------------

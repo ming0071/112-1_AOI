@@ -10,13 +10,14 @@ using namespace std;
 // DefaultMinDist = gray.rows / 8 . DefaultParam2 is important
 const int DefaultMinDist = 60, DefaultParam1 = 60, DefaultParam2 = 24, DefaultMinRadius = 48,
           DefaultRadmaxius = 61, MaxValue = 255;
+const float bias = 1.05;
 
 // Global variables
 Mat frame, dst, output, ROI, polarImg_Inv, diff, grayDiff, mergeIMG, srcClone;
 vector<Vec3f> circles;
 int minDist, param1, param2, minRadius, Radmaxius, channel;
 int circleCenterX, circleCenterY, circleRadius, pixelValue = 155, brightness = 155, travel = 0;
-const float bias = 1.05;
+vector<int> defectMat;
 
 // Function prototypes
 void minDistCall(int, void *);
@@ -31,7 +32,7 @@ void calcCircles(const Mat &input, vector<Vec3f> &circles);
 void detectCirclesAndDraw();
 bool isCircleOutOfBounds(int centerX, int centerY, int radius, int maxWidth, int maxHeight);
 void circleDetect(double &defectSize);
-void imgMerge(Mat &srcClone, double &defectSize);
+void imgMerge(int num, Mat &srcClone, double &defectSize);
 
 int main(int argc, char **argv)
 {
@@ -81,6 +82,11 @@ int main(int argc, char **argv)
     int frameNum = 0;
     bool hasDefect = false;
     double defectSize;
+    defectMat.resize(circles.size());
+    for (size_t i = 0; i < circles.size(); ++i)
+    {
+        defectMat[i] = 0;
+    }
     createTrackbar("channel", "merge", nullptr, MaxChannel, channelCall);
     setTrackbarPos("channel", "merge", InitChannel);
 
@@ -102,12 +108,12 @@ int main(int argc, char **argv)
                 {
                     if (frameNum > 10)
                     {
-                        imgMerge(srcClone, defectSize);
+                        imgMerge(travel, srcClone, defectSize);
                     }
                     break;
                 }
                 circleDetect(defectSize);
-                imgMerge(srcClone, defectSize);
+                imgMerge(travel, srcClone, defectSize);
 
                 travel++;
             }
@@ -119,11 +125,11 @@ int main(int argc, char **argv)
                 if (!isCircleOutOfBounds(circleCenterX, circleCenterY, circleRadius, frame.cols, frame.rows))
                 {
                     circleDetect(defectSize);
-                    imgMerge(srcClone, defectSize);
+                    imgMerge(channel, srcClone, defectSize);
                 }
                 if (frameNum > 10)
                 {
-                    imgMerge(srcClone, defectSize);
+                    imgMerge(channel, srcClone, defectSize);
                 }
                 travel = 0;
                 break;
@@ -378,23 +384,23 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
     putText(image, "defectSize = " + to_string(lround(defectSize)), Point(30, 150), FONT_HERSHEY_SIMPLEX, 0.75, Scalar(255, 0, 0), 2);
 }
 
-bool hasDefect(double &defectSize)
+void hasDefect(int num, double &defectSize)
 {
-    if ((defectSize > 400.0) && (defectSize < 2000.0)) // TODO:
-        return true;
+    if ((defectSize > 200.0) && (defectSize < 2000.0))
+        defectMat[num]--;
     else
-        return false;
+        defectMat[num]++;
 }
 
-void imgMerge(Mat &srcClone, double &defectSize)
+void imgMerge(int num, Mat &srcClone, double &defectSize)
 {
     int padding = 20;
 
     int width = frame.cols + ROI.cols + dst.cols + polarImg_Inv.cols + padding * 4;
     int height = max(max(ROI.rows, dst.rows), polarImg_Inv.rows) + padding * 2;
     mergeIMG = Mat3b(height, width, Vec3b(0, 0, 0));
-
-    if (hasDefect(defectSize))
+    hasDefect(num, defectSize);
+    if (defectMat[num] < 10)
     {
         drawNGText(srcClone, circleCenterX, circleCenterY);
     }
