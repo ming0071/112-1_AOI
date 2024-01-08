@@ -3,7 +3,7 @@ git upload.txt
 public key.txt
 
 
-dics/SimpleSingleGrab
+docs/SimpleSingleGrab
 # --- 以下參考 ---
 # 忽略 config 目錄下的 database.yml 檔案
 # config/database.yml
