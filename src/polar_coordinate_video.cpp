@@ -400,7 +400,7 @@ void imgMerge(int num, Mat &srcClone, double &defectSize)
     int height = max(max(ROI.rows, dst.rows), polarImg_Inv.rows) + padding * 2;
     mergeIMG = Mat3b(height, width, Vec3b(0, 0, 0));
     hasDefect(num, defectSize);
-    if (defectMat[num] < 10)
+    if (defectMat[num] < 0)
     {
         drawNGText(srcClone, circleCenterX, circleCenterY);
     }
