@@ -29,7 +29,6 @@
                 "-l", "opencv_ts480",  
                 "-l", "opencv_video480",
                 "-l", "opencv_videoio480",
-
             ],
             "options": {
                 "cwd": "C:/mingw64/bin"
