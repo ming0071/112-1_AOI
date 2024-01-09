@@ -133,6 +133,7 @@ int main(int argc, char **argv)
             break;
         }
     }
+    capture.release();
     destroyAllWindows();
     return 0;
 }
@@ -325,13 +326,14 @@ void circleDetect(double &defectSize)
 
     if (isDebugMode)
     {
-        // imshow("Region of Interest", ROI);
+        imshow("Region of Interest", ROI);
         // imshow("Polar Coordinates", dst);
-        // imshow("Gray Image", grayDst);
-        // imshow("Blurred Image", blurredDst);
+        imshow("Gray Image", grayDst);
+        imshow("Blurred Image", blurredDst);
         imshow("Difference", diff);
         imshow("Binary Image", binary);
-        // imshow("Inverse Polar", polarImg_Inv);
+        imshow("Inverse Polar", polarImg_Inv);
+        imshow("Inverse Polar contours", diffC3);
     }
 }
 

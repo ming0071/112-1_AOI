@@ -206,6 +206,7 @@ void calcCircles(const Mat &input, vector<Vec3f> &circles)
     }
     Mat result = Mat::zeros(temp.size(), CV_8UC1);
     drawContours(result, contours, -1, Scalar(255), 0.5);
+    // imshow("result",result);
 
     HoughCircles(result, circles, HOUGH_GRADIENT, 1, minDist, param1, param2, minRadius, Radmaxius);
     sort(circles.begin(), circles.end(), compareCircles);
@@ -234,6 +235,12 @@ void detectCirclesAndDraw()
 // -------------------------------------------------------------------------
 // ---                    VOID about circle detect                       --- binary threshold、defect method
 // -------------------------------------------------------------------------
+void processPolarCoordinates(const Mat &input, Mat &polarImg_Inv, int circleRadius)
+{
+    Point trans_center = Point(circleRadius, circleRadius);
+    warpPolar(input, polarImg_Inv, Size(300, 600), trans_center, circleRadius, INTER_LINEAR | WARP_POLAR_LINEAR);
+}
+
 void drawContoursOnImage(Mat &image, const vector<vector<Point>> &contours, double &defectSize)
 {
     for (int i = 0; i < contours.size(); i++)
@@ -245,12 +252,6 @@ void drawContoursOnImage(Mat &image, const vector<vector<Point>> &contours, doub
             defectSize = defectSize + contourArea(contours[i]);
         }
     }
-}
-
-void processPolarCoordinates(const Mat &input, Mat &polarImg_Inv, int circleRadius)
-{
-    Point trans_center = Point(circleRadius, circleRadius);
-    warpPolar(input, polarImg_Inv, Size(300, 600), trans_center, circleRadius, INTER_LINEAR | WARP_POLAR_LINEAR);
 }
 
 void circleDetect(double &defectSize)
@@ -284,13 +285,14 @@ void circleDetect(double &defectSize)
 
     if (isDebugMode)
     {
-        // imshow("Region of Interest", ROI);
+        imshow("Region of Interest", ROI);
         // imshow("Polar Coordinates", dst);
-        // imshow("Gray Image", grayDst);
-        // imshow("Blurred Image", blurredDst);
+        imshow("Gray Image", grayDst);
+        imshow("Blurred Image", blurredDst);
         imshow("Difference", diff);
         imshow("Binary Image", binary);
-        // imshow("Inverse Polar", polarImg_Inv);
+        imshow("Inverse Polar", polarImg_Inv);
+        imshow("Inverse Polar contours", diffC3);
     }
 }
 
@@ -316,8 +318,7 @@ void drawCirclesAndText(Mat &image, int centerX, int centerY, int radius, double
     circle(image, center, radius, Scalar(255, 0, 0), 3, 8, 0);
 
     int outsetX = src.cols;
-    putText(image, "Adjust channel trackbar to control image show, and click in the polar coordinate area to control brightness threshold.", Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
-    putText(image, "Press q or Ese exit window", Point(5, 50), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
+    putText(image, "Adjust channel trackbar to control image show, Press q or Ese exit window.", Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.7, Scalar(0, 255, 255), 2);
     putText(image, "src :", Point(10, 90), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
     putText(image, "ROI :", Point(outsetX + 10, 90), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
     putText(image, "defect :", Point(outsetX + 10, 340), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 255, 0), 2);
