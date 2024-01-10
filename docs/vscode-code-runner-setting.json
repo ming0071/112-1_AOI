@@ -20,7 +20,7 @@
   "git.enabled": false,
   // "editor.defaultFormatter": null,
   // "editor.formatOnSave": false,  // enable per language
-  
+
   "[html]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -28,11 +28,10 @@
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[python]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "ms-python.black-formatter"
   },
+  "flake8.args": ["--max-line-length=120", "--ignore=E131,E302,F401,E402"],
   "code-runner.executorMap": {
-    
-
     "javascript": "node",
     "java": "cd $dir && javac $fileName && java $fileNameWithoutExt",
     "c": "cd $dir && gcc $fileName -o $fileNameWithoutExt && $dir$fileNameWithoutExt",
@@ -94,7 +93,5 @@
     "typescript": ".ts"
   },
   "editor.fontSize": 18,
-  "editor.codeActionsOnSave": {
-
-  },
+  "editor.codeActionsOnSave": {}
 }
