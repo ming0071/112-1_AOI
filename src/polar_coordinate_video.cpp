@@ -40,7 +40,8 @@ int main(int argc, char **argv)
     // ---                        HoughCircles                               ---
     // -------------------------------------------------------------------------
     // pre-process
-    VideoCapture capture("..\\data\\video\\0105.avi");
+    // VideoCapture capture("..\\data\\video\\0105.avi");
+    VideoCapture capture(0);
     if (!capture.isOpened())
     {
         cout << "Cannot open the video." << endl;
